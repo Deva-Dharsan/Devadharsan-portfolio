@@ -14,6 +14,24 @@ const Contact = () => {
     e.preventDefault();
     setStatus({ submitting: true, success: false, error: null });
     try {
+      // 1. Send email directly from frontend via Web3Forms (bypasses Cloudflare server blocks)
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: '737a4b67-3609-4f6e-82eb-b1d368bca7b2',
+          name: formData.name,
+          email: formData.email,
+          subject: `📬 Portfolio Message: ${formData.subject}`,
+          message: formData.message,
+          from_name: 'Portfolio Contact'
+        })
+      });
+
+      // 2. Save to database via our backend API
       const res = await fetch(`${API_URL}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
