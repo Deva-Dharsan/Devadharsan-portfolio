@@ -16,12 +16,19 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Timeout: if backend is unreachable, don't hang forever
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       try {
         const response = await fetch(`${API_URL}/auth/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (response.ok) {
           const data = await response.json();
@@ -31,8 +38,13 @@ export const AuthProvider = ({ children }) => {
           logout();
         }
       } catch (error) {
-        console.error('Error verifying token:', error);
-        // Do not log out on network error to allow user to retry
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          // Backend unreachable — clear stale token, show portfolio
+          logout();
+        } else {
+          console.error('Error verifying token:', error);
+        }
       } finally {
         setLoading(false);
       }
