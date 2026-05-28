@@ -1,10 +1,13 @@
 import Message from '../models/Message.js';
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter using Gmail SMTP
+// Create reusable transporter using Gmail SMTP (forced IPv4 for Render free tier)
 const createTransporter = () =>
   nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // SSL
+    family: 4,    // Force IPv4 — Render free tier doesn't support IPv6
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
