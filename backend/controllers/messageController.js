@@ -104,8 +104,10 @@ export const sendMessage = async (req, res) => {
 
     const createdMessage = await newMessage.save();
 
-    // Send email notification (blocking temporarily for debugging)
-    await sendEmailNotification({ name, email, subject, message });
+    // Send email notification (non-blocking — don't fail the request if email fails)
+    sendEmailNotification({ name, email, subject, message }).catch((err) => {
+      console.error('Email notification failed:', err.message);
+    });
 
     res.status(201).json({ success: true, message: 'Message sent successfully', data: createdMessage });
   } catch (error) {
