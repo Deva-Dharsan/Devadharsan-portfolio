@@ -62,7 +62,7 @@ const Contact = () => {
             <h3 className="cip-heading">Contact Information</h3>
 
             <div className="cip-links">
-              <a href="mailto:devadharshan.pro@gmail.com" className="cip-link">
+              <a href="https://mail.google.com/mail/?view=cm&to=devadharshan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="cip-link">
                 <div className="cip-icon" style={{ '--icon-color': 'var(--color-primary)' }}>
                   <Mail size={20} />
                 </div>
@@ -82,13 +82,13 @@ const Contact = () => {
                 </div>
               </a>
 
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="cip-link">
+              <a href="https://github.com/Deva-Dharsan" target="_blank" rel="noopener noreferrer" className="cip-link">
                 <div className="cip-icon" style={{ '--icon-color': 'var(--text-primary)' }}>
                   <Github size={20} />
                 </div>
                 <div className="cip-text">
                   <span className="cip-label">GitHub</span>
-                  <span className="cip-value">github.com</span>
+                  <span className="cip-value">github.com/Deva-Dharsan</span>
                 </div>
               </a>
 

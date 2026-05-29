@@ -81,7 +81,7 @@ const Projects = () => {
               <span className="cs-badge">MongoDB</span>
             </div>
             <a
-              href="https://github.com"
+              href="https://github.com/Deva-Dharsan"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary cs-github-btn"

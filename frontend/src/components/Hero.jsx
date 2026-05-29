@@ -91,7 +91,7 @@ const Hero = ({ setActiveSection }) => {
           </div>
 
           <div className="hero-social">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="social-chip" title="GitHub">
+            <a href="https://github.com/Deva-Dharsan" target="_blank" rel="noopener noreferrer" className="social-chip" title="GitHub">
               <Github size={17} />
               <span>GitHub</span>
             </a>
@@ -99,7 +99,7 @@ const Hero = ({ setActiveSection }) => {
               <Linkedin size={17} />
               <span>LinkedIn</span>
             </a>
-            <a href="mailto:devadharshan.pro@gmail.com" className="social-chip" title="Email">
+            <a href="https://mail.google.com/mail/?view=cm&to=devadharshan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="social-chip" title="Email">
               <Mail size={17} />
               <span>Email</span>
             </a>
