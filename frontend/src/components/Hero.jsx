@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Github, Linkedin, Mail, ArrowDown, MapPin, Code2 } from 'lucide-react';
+import { ArrowRight, Github, Linkedin, Mail, ArrowDown, MapPin, Code2, Download } from 'lucide-react';
 
 const TITLES = [
   'Full Stack Developer',
@@ -88,6 +88,15 @@ const Hero = ({ setActiveSection }) => {
               Hire Me
               <Mail size={17} />
             </button>
+            <a
+              href="/Devadharsan_Resume.pdf"
+              download="Devadharsan_Resume.pdf"
+              className="btn hero-btn-cv"
+              title="Download my CV"
+            >
+              <Download size={17} />
+              Download CV
+            </a>
           </div>
 
           <div className="hero-social">
@@ -299,6 +308,30 @@ const Hero = ({ setActiveSection }) => {
           padding: 0.85rem 1.75rem;
           font-size: 0.95rem;
         }
+        .hero-btn-cv {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.85rem 1.6rem;
+          font-size: 0.95rem;
+          font-family: var(--font-display);
+          font-weight: 600;
+          color: var(--color-accent);
+          background: rgba(56, 189, 248, 0.06);
+          border: 1.5px solid rgba(56, 189, 248, 0.3);
+          border-radius: var(--border-radius-sm);
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          letter-spacing: 0.01em;
+        }
+        .hero-btn-cv:hover {
+          background: rgba(56, 189, 248, 0.14);
+          border-color: rgba(56, 189, 248, 0.6);
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(56, 189, 248, 0.18);
+        }
 
         .hero-social {
           display: flex;
@@ -498,7 +531,7 @@ const Hero = ({ setActiveSection }) => {
         }
         @media (max-width: 480px) {
           .hero-cta { flex-direction: column; }
-          .hero-btn-primary, .hero-btn-secondary { width: 100%; justify-content: center; }
+          .hero-btn-primary, .hero-btn-secondary, .hero-btn-cv { width: 100%; justify-content: center; }
         }
       `}</style>
     </section>

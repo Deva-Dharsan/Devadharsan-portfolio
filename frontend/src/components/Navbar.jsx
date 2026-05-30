@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Menu, X, Lock, LogOut, LayoutDashboard, Terminal, Shield } from 'lucide-react';
+import { Menu, X, Lock, LogOut, LayoutDashboard, Terminal, Shield, Download } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const NAV_ITEMS = [
@@ -121,6 +121,19 @@ const Navbar = ({ activeSection, setActiveSection, currentView, setCurrentView }
 
           {/* Actions */}
           <div className="nav-actions">
+            {/* Download CV — always visible on desktop */}
+            {currentView === 'portfolio' && (
+              <a
+                href="/Devadharsan_Resume.pdf"
+                download="Devadharsan_Resume.pdf"
+                className="nav-cv-btn"
+                title="Download CV"
+              >
+                <Download size={14} />
+                <span>Resume</span>
+              </a>
+            )}
+
             {user ? (
               <div className="nav-admin-group">
                 <button
@@ -172,6 +185,19 @@ const Navbar = ({ activeSection, setActiveSection, currentView, setCurrentView }
                 <button className="nav-drawer-link" onClick={() => { setIsOpen(false); setCurrentView('portfolio'); }}>
                   ← Back to Portfolio
                 </button>
+              </li>
+            )}
+
+          {currentView === 'portfolio' && (
+              <li>
+                <a
+                  href="/Devadharsan_Resume.pdf"
+                  download="Devadharsan_Resume.pdf"
+                  className="nav-drawer-link nav-drawer-cv"
+                  onClick={() => setIsOpen(false)}
+                >
+                  ⬇ Download CV
+                </a>
               </li>
             )}
 
@@ -388,6 +414,32 @@ const Navbar = ({ activeSection, setActiveSection, currentView, setCurrentView }
         /* Actions */
         .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
         .nav-admin-group { display: flex; align-items: center; gap: 0.5rem; }
+
+        /* Download CV button in navbar */
+        .nav-cv-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.4rem 0.9rem;
+          background: rgba(56, 189, 248, 0.07);
+          border: 1.5px solid rgba(56, 189, 248, 0.25);
+          border-radius: var(--border-radius-sm);
+          color: var(--color-accent);
+          font-family: 'Inter', sans-serif;
+          font-size: 0.8rem;
+          font-weight: 600;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all var(--transition-normal);
+          letter-spacing: 0.01em;
+          white-space: nowrap;
+        }
+        .nav-cv-btn:hover {
+          background: rgba(56, 189, 248, 0.16);
+          border-color: rgba(56, 189, 248, 0.5);
+          color: #fff;
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+        }
         .nav-admin-btn {
           display: flex; align-items: center; gap: 0.4rem;
           padding: 0.45rem 1rem;
@@ -491,7 +543,16 @@ const Navbar = ({ activeSection, setActiveSection, currentView, setCurrentView }
           .nav-links { display: none; }
           .nav-hamburger { display: flex; }
           .nav-drawer { display: block; }
+          .nav-cv-btn { display: none; }
         }
+
+        .nav-drawer-cv {
+          display: flex !important;
+          align-items: center;
+          color: var(--color-accent) !important;
+          font-weight: 600;
+        }
+        .nav-drawer-cv:hover { color: #fff !important; }
 
         @media (max-width: 576px) {
           .nav-wrapper--scrolled .nav-logo-text { font-size: 0.85rem; }
