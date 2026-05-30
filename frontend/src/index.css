@@ -596,4 +596,13 @@ textarea.form-control {
   .container {
     padding: 0 1.25rem;
   }
+
+  #about .section-label,
+  #contact .section-label {
+    display: none;
+  }
+
+  h2.section-titlee {
+    left: 50%;
+  }
 }
