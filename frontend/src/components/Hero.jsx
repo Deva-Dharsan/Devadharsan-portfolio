@@ -108,7 +108,7 @@ const Hero = ({ setActiveSection }) => {
               <Linkedin size={17} />
               <span>LinkedIn</span>
             </a>
-            <a href="https://mail.google.com/mail/?view=cm&to=devadharshan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="social-chip" title="Email">
+            <a href="https://mail.google.com/mail/?view=cm&to=devadharsan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="social-chip" title="Email">
               <Mail size={17} />
               <span>Email</span>
             </a>
