@@ -62,13 +62,13 @@ const Contact = () => {
             <h3 className="cip-heading">Contact Information</h3>
 
             <div className="cip-links">
-              <a href="https://mail.google.com/mail/?view=cm&to=devadharshan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="cip-link">
+              <a href="https://mail.google.com/mail/?view=cm&to=devadharsan.pro@gmail.com" target="_blank" rel="noopener noreferrer" className="cip-link">
                 <div className="cip-icon" style={{ '--icon-color': 'var(--color-primary)' }}>
                   <Mail size={20} />
                 </div>
                 <div className="cip-text">
                   <span className="cip-label">Email</span>
-                  <span className="cip-value">devadharshan.pro@gmail.com</span>
+                  <span className="cip-value">devadharsan.pro@gmail.com</span>
                 </div>
               </a>
 
