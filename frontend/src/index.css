@@ -197,6 +197,7 @@ h2.section-titlee {
   left: 40%;
   transform: translateX(-50%);
 }
+
 h2.section-title::after {
   content: '';
   display: block;

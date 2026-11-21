@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { GraduationCap, Rocket, Heart, BookOpen, Briefcase, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { GraduationCap, Rocket, Heart, BookOpen, Briefcase, MapPin, Calendar } from 'lucide-react';
 
 const Experience = () => {
   const { API_URL } = useContext(AuthContext);
   const [experiences, setExperiences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState({});
   const sectionRef = useRef(null);
   const [visible, setVisible] = useState(false);
 
@@ -36,8 +35,6 @@ const Experience = () => {
     };
     fetchExperiences();
   }, [API_URL]);
-
-  const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
   const highlights = [
     {
@@ -69,8 +66,10 @@ const Experience = () => {
   return (
     <section id="experience" className="experience-section" ref={sectionRef}>
       <div className="container">
-        {/* <span className="section-label">My Journey</span> */}
-        <h2 className="section-title">Experience</h2>
+        <div className="section-header">
+          <span className="section-label">My Journey</span>
+          <h2 className="section-title">Experience</h2>
+        </div>
 
         {/* Backend-driven experience entries */}
         {loading ? (
@@ -108,28 +107,19 @@ const Experience = () => {
                         <Calendar size={12} />
                         {exp.duration}
                       </span>
-                      <button
-                        className="exp-toggle-btn"
-                        onClick={() => toggleExpand(exp._id)}
-                        aria-label="Toggle details"
-                      >
-                        {expanded[exp._id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
                     </div>
                   </div>
 
-                  {expanded[exp._id] && (
-                    <div className="exp-card-body">
-                      <p className="exp-desc">{exp.description}</p>
-                      {exp.skills && exp.skills.length > 0 && (
-                        <div className="exp-skills">
-                          {exp.skills.map((skill, i) => (
-                            <span key={i} className="exp-skill-tag">{skill}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className="exp-card-body">
+                    <p className="exp-desc">{exp.description}</p>
+                    {exp.skills && exp.skills.length > 0 && (
+                      <div className="exp-skills">
+                        {exp.skills.map((skill, i) => (
+                          <span key={i} className="exp-skill-tag">{skill}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -326,24 +316,10 @@ const Experience = () => {
           color: var(--text-muted);
           white-space: nowrap;
         }
-        .exp-toggle-btn {
-          background: rgba(14,165,233,0.08);
-          border: 1px solid rgba(14,165,233,0.15);
-          border-radius: 8px;
-          color: var(--color-primary);
-          width: 30px; height: 30px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-        .exp-toggle-btn:hover {
-          background: rgba(14,165,233,0.18);
-        }
         .exp-card-body {
           margin-top: 1.25rem;
           padding-top: 1.25rem;
           border-top: 1px solid rgba(255,255,255,0.05);
-          animation: fadeInUp 0.3s ease;
         }
         .exp-desc {
           font-size: 0.93rem;
