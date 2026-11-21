@@ -17,36 +17,59 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('portfolio');
   const { user, loading } = useContext(AuthContext);
 
-  // ─── Scroll Spy ────────────────────────────────────────────────
+  // ─── Robust Scroll Spy (Works reliably in both Local & Live) ───
   useEffect(() => {
-    if (currentView !== 'portfolio') return;
+    if (loading || currentView !== 'portfolio') return;
 
-    const observers = [];
+    let ticking = false;
 
-    SECTION_IDS.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollPos = window.scrollY + 140; // Offset for navbar height
+          const windowHeight = window.innerHeight;
+          const docHeight = document.documentElement.scrollHeight;
 
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setActiveSection(id);
+          // 1. If at bottom of page, highlight the last section ('contact')
+          if (window.scrollY + windowHeight >= docHeight - 40) {
+            setActiveSection('contact');
+            ticking = false;
+            return;
           }
-        },
-        {
-          // Fire when section occupies a comfortable region at eye level (upper 50% of screen)
-          rootMargin: '-80px 0px -50% 0px',
-          threshold: 0,
-        }
-      );
 
-      observer.observe(el);
-      observers.push(observer);
-    });
+          // 2. If at the top of page, highlight 'home'
+          if (window.scrollY < 120) {
+            setActiveSection('home');
+            ticking = false;
+            return;
+          }
 
-    return () => observers.forEach((o) => o.disconnect());
-  }, [currentView]);
-  // ───────────────────────────────────────────────────────────────
+          // 3. Scan sections in reverse order to find the active section
+          for (let i = SECTION_IDS.length - 1; i >= 0; i--) {
+            const id = SECTION_IDS[i];
+            const el = document.getElementById(id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              const top = rect.top + window.scrollY;
+              if (scrollPos >= top) {
+                setActiveSection(id);
+                break;
+              }
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Initialize immediately once loading is complete and sections are mounted
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentView, loading]);
+  // ─────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -95,7 +118,7 @@ function AppContent() {
               <p className="footer-copy">
                 &copy; {new Date().getFullYear()} <strong>Devadharsan J E</strong> &mdash; All rights reserved.
               </p>
-              <p className="footer-stack">Built with MERN Stack · React · Node.js · Express · MongoDB </p>
+              <p className="footer-stack">Built with MERN &amp; MEAN Stack · React · Node.js · Express · MongoDB · Angular</p>
             </div>
           </footer>
         </main>
