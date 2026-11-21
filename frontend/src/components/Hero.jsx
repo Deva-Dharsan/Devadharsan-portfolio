@@ -111,7 +111,7 @@ const Hero = ({ setActiveSection }) => {
           {/* Terminal-Styled Role Line */}
           <div className="hero-role-terminal">
             <div className="role-terminal-head">
-              <Terminal size={14} className="role-terminal-icon" />
+              {/* <Terminal size={14} className="role-terminal-icon" /> */}
               {/* <span className="role-terminal-prompt">engineer:~$</span> */}
             </div>
             <div className="role-terminal-body">
@@ -506,7 +506,6 @@ const Hero = ({ setActiveSection }) => {
         .hero-role-terminal {
           display: inline-flex;
           align-items: center;
-          gap: 0.75rem;
           padding: 0.5rem 1rem;
           background: rgba(10, 20, 35, 0.75);
           border: 1px solid rgba(14, 165, 233, 0.2);
