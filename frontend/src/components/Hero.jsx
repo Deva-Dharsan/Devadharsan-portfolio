@@ -4,6 +4,7 @@ import { ArrowRight, Github, Linkedin, Mail, ArrowDown, MapPin, Code2, Download 
 const TITLES = [
   'Full Stack Developer',
   'MERN Stack Developer',
+  'MEAN Stack Developer',
   'JavaScript Developer',
   'Web Application Developer',
 ];
@@ -66,7 +67,8 @@ const Hero = ({ setActiveSection }) => {
 
           <p className="hero-description">
             Aspiring Junior Full Stack Developer with a strong foundation in the{' '}
-            <span className="inline-badge">MERN Stack</span>. Passionate about building
+            <span className="inline-badge">MERN Stack</span> and{' '}
+            <span className="inline-badge">MEAN Stack</span>. Passionate about building
             clean, responsive web applications and eager to contribute to a dynamic team from day one.
           </p>
 
@@ -124,15 +126,19 @@ const Hero = ({ setActiveSection }) => {
                 <span style={{ background: '#f59e0b' }}></span>
                 <span style={{ background: '#10b981' }}></span>
               </div>
-              <span className="hc-filename">devadharsan.js</span>
+              <span className="hc-filename">devadharsan.je</span>
             </div>
             <pre className="hc-code">
               <code>
 {`const developer = {
   name: "Devadharsan J E",
   role: "Full Stack Developer",
-  stack: ["React", "Node.js",
-          "Express", "MongoDB"],
+  stacks: {
+    MERN: ["MongoDB", "Express",
+           "React", "Node.js"],
+    MEAN: ["MongoDB", "Express",
+           "Angular", "Node.js"],
+  },
   degree: "B.E. CSE (2026)",
   status: "Open to Work 🚀",
   passions: [
@@ -148,12 +154,12 @@ const Hero = ({ setActiveSection }) => {
             <div className="hc-footer">
               <div className="hc-stat">
                 <span className="hcs-val">MERN</span>
-                <span className="hcs-label">Core Stack</span>
+                <span className="hcs-label">Stack</span>
               </div>
               <div className="hc-divider"></div>
               <div className="hc-stat">
-                <span className="hcs-val">2026</span>
-                <span className="hcs-label">Graduating</span>
+                <span className="hcs-val">MEAN</span>
+                <span className="hcs-label">Stack</span>
               </div>
               <div className="hc-divider"></div>
               <div className="hc-stat">

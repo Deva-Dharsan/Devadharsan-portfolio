@@ -95,13 +95,13 @@ function AppContent() {
               <p className="footer-copy">
                 &copy; {new Date().getFullYear()} <strong>Devadharsan J E</strong> &mdash; All rights reserved.
               </p>
-              <p className="footer-stack">Built with MERN Stack &amp; Vanilla CSS</p>
+              <p className="footer-stack">Built with MERN Stack · React · Node.js · Express · MongoDB </p>
             </div>
           </footer>
         </main>
       ) : (
         <main>
-          {user ? <AdminDashboard /> : <AdminLogin />}
+          {user ? <AdminDashboard /> : <AdminLogin setCurrentView={setCurrentView} />}
         </main>
       )}
 

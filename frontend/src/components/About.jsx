@@ -5,11 +5,11 @@ const SKILLS = {
   technical: [
     { name: 'JavaScript (ES6+)', level: 85, color: '#f59e0b' },
     { name: 'React.js', level: 88, color: '#0ea5e9' },
+    { name: 'Angular', level: 72, color: '#f43f5e' },
     { name: 'Node.js', level: 82, color: '#10b981' },
     { name: 'Express.js', level: 80, color: '#818cf8' },
     { name: 'MongoDB', level: 78, color: '#06d6a0' },
-    { name: 'HTML5', level: 95, color: '#f43f5e' },
-    { name: 'CSS3', level: 90, color: '#0ea5e9' },
+    { name: 'HTML5 & CSS3', level: 93, color: '#0ea5e9' },
     { name: 'Git & GitHub', level: 85, color: '#f59e0b' },
   ],
   soft: [
@@ -81,7 +81,7 @@ const About = () => {
             </div>
 
             <p className="bio-text">
-              Creative and highly motivated developer with a solid foundation in the MERN stack.
+              Creative and highly motivated developer with a solid foundation in the MERN and MEAN stacks.
               I enjoy turning complex problems into clean, elegant solutions and building applications
               that feel great to use.
             </p>
@@ -95,6 +95,10 @@ const About = () => {
               <div className="bio-fact">
                 <span className="bf-icon"><Code2 size={16} /></span>
                 <span className="bf-text">MERN Stack</span>
+              </div>
+              <div className="bio-fact">
+                <span className="bf-icon"><Code2 size={16} /></span>
+                <span className="bf-text">MEAN Stack</span>
               </div>
               <div className="bio-fact">
                 <span className="bf-icon"><Server size={16} /></span>

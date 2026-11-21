@@ -1,8 +1,8 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { Lock, Mail, Eye, EyeOff, AlertTriangle, Terminal, Shield } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, AlertTriangle, Terminal, Shield, ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
-const AdminLogin = () => {
+const AdminLogin = ({ setCurrentView }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +35,7 @@ const AdminLogin = () => {
     return () => clearInterval(blink);
   }, []);
 
-  // Matrix rain canvas
+  // Matrix rain — English hacker words & code chars
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -48,20 +48,67 @@ const AdminLogin = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
+    // English hacker-style characters and words fragments
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;<>?/~`!';
+    const hackerWords = [
+      'ACCESS', 'DENIED', 'ROOT', 'SUDO', 'SSH', 'PING', 'PORT', 'NULL',
+      'HACK', 'EXEC', 'INIT', 'BOOT', 'SYS', 'AUTH', 'KEY', 'TOKEN',
+      'SHELL', 'BASH', 'NODE', 'API', 'SQL', 'XSS', 'CSRF', 'ADMIN',
+      'LOGIN', 'PASS', 'HASH', 'SALT', 'CRYPT', 'BYTE', 'HEX', 'BIT',
+      'NET', 'SCAN', 'PROXY', 'TRACE', 'ROUTE', 'HOST', 'DNS', 'IP',
+      '127.0.0.1', '0x', 'FF', '00', 'ERR', 'OK', '200', '403', '500',
+    ];
+
+    // Build a pool of single chars + word fragments
+    const pool = chars.split('').concat(
+      hackerWords.flatMap(w => w.split(''))
+    );
+
     const fontSize = 14;
     const columns = Math.floor(canvas.width / fontSize);
     const drops = Array(columns).fill(1);
+    // Track whether column is in "word mode"
+    const wordQueues = Array(columns).fill(null).map(() => ({ chars: [], idx: 0 }));
+
+    // Randomly seed some columns with words
+    const seedWord = (col) => {
+      const word = hackerWords[Math.floor(Math.random() * hackerWords.length)] + ' ';
+      wordQueues[col] = { chars: word.split(''), idx: 0 };
+    };
+    columns && [...Array(Math.floor(columns * 0.15))].forEach((_, i) => {
+      const col = Math.floor(Math.random() * columns);
+      seedWord(col);
+    });
 
     const draw = () => {
       ctx.fillStyle = 'rgba(10, 10, 10, 0.06)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00ff4120';
-      ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
 
       for (let i = 0; i < drops.length; i++) {
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        let char;
+        const wq = wordQueues[i];
+
+        if (wq && wq.idx < wq.chars.length) {
+          char = wq.chars[wq.idx];
+          wq.idx++;
+          if (wq.idx >= wq.chars.length) {
+            wordQueues[i] = { chars: [], idx: 0 };
+          }
+          // Bright green for word chars
+          ctx.fillStyle = '#00ff41';
+          ctx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
+        } else {
+          char = pool[Math.floor(Math.random() * pool.length)];
+          // Dim green for normal rain
+          ctx.fillStyle = 'rgba(0, 255, 65, 0.18)';
+          ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
+
+          // Randomly start a word stream
+          if (Math.random() > 0.995) seedWord(i);
+        }
+
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
@@ -80,9 +127,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const result = await login(email, password);
-
     if (!result.success) {
       setError(result.error || 'ACCESS_DENIED: Invalid credentials');
       setLoading(false);
@@ -95,6 +140,7 @@ const AdminLogin = () => {
       <div className="hk-scanlines" />
 
       <div className="hk-login-card">
+        {/* Header */}
         <div className="hk-login-header">
           <div className="hk-lock-icon">
             <Shield size={26} />
@@ -104,11 +150,12 @@ const AdminLogin = () => {
             <span className={`hk-cursor ${showCursor ? '' : 'hk-cursor--hide'}`}>_</span>
           </h2>
           <p className="hk-login-sub">
-            <Terminal size={13} style={{ marginRight: 6 }} />
+            <Terminal size={13} style={{ marginRight: 6, flexShrink: 0 }} />
             Authenticate to access control panel
           </p>
         </div>
 
+        {/* Error alert */}
         {error && (
           <div className="hk-alert">
             <AlertTriangle size={16} />
@@ -116,6 +163,7 @@ const AdminLogin = () => {
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="hk-form">
           <div className="hk-field">
             <label className="hk-label" htmlFor="hk-email">admin_email</label>
@@ -173,11 +221,22 @@ const AdminLogin = () => {
           </button>
         </form>
 
+        {/* Footer */}
         <div className="hk-footer-line">
           <span>encrypted connection</span>
           <span className="hk-dot-pulse" />
           <span>secure</span>
         </div>
+
+        {/* Back to portfolio */}
+        <button
+          className="hk-back-btn"
+          onClick={() => setCurrentView('portfolio')}
+          type="button"
+        >
+          <ArrowLeft size={13} />
+          Back to Portfolio
+        </button>
       </div>
 
       <style>{`
@@ -198,7 +257,7 @@ const AdminLogin = () => {
           width: 100%;
           height: 100%;
           z-index: 0;
-          opacity: 0.6;
+          opacity: 0.65;
         }
 
         .hk-scanlines {
@@ -220,7 +279,7 @@ const AdminLogin = () => {
           z-index: 2;
           width: 100%;
           max-width: 440px;
-          margin: 0 1.5rem;
+          margin: 1.5rem;
           padding: 2.5rem;
           background: rgba(10, 10, 10, 0.92);
           border: 1px solid rgba(0, 255, 65, 0.2);
@@ -232,16 +291,11 @@ const AdminLogin = () => {
         }
 
         @keyframes hkCardIn {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.96);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+          from { opacity: 0; transform: translateY(30px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
+        /* Header */
         .hk-login-header {
           text-align: center;
           margin-bottom: 2rem;
@@ -264,7 +318,7 @@ const AdminLogin = () => {
 
         @keyframes hkPulseIcon {
           from { box-shadow: 0 0 20px rgba(0, 255, 65, 0.15); }
-          to { box-shadow: 0 0 35px rgba(0, 255, 65, 0.3); }
+          to   { box-shadow: 0 0 35px rgba(0, 255, 65, 0.3); }
         }
 
         .hk-typed-title {
@@ -277,13 +331,8 @@ const AdminLogin = () => {
           text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
         }
 
-        .hk-cursor {
-          color: #00ff41;
-          animation: none;
-        }
-        .hk-cursor--hide {
-          opacity: 0;
-        }
+        .hk-cursor { color: #00ff41; }
+        .hk-cursor--hide { opacity: 0; }
 
         .hk-login-sub {
           font-size: 0.75rem;
@@ -295,6 +344,7 @@ const AdminLogin = () => {
           text-transform: uppercase;
         }
 
+        /* Alert */
         .hk-alert {
           display: flex;
           align-items: center;
@@ -317,13 +367,18 @@ const AdminLogin = () => {
           80% { transform: translateX(4px); }
         }
 
+        /* Form */
         .hk-form {
           display: flex;
           flex-direction: column;
           gap: 1.25rem;
         }
 
-        .hk-field {}
+        .hk-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
 
         .hk-label {
           display: block;
@@ -332,7 +387,6 @@ const AdminLogin = () => {
           color: #00ff41;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          margin-bottom: 0.4rem;
           opacity: 0.7;
         }
 
@@ -345,8 +399,9 @@ const AdminLogin = () => {
         .hk-input-icon {
           position: absolute;
           left: 0.9rem;
-          color: #00ff4160;
+          color: rgba(0, 255, 65, 0.4);
           pointer-events: none;
+          flex-shrink: 0;
         }
 
         .hk-input {
@@ -360,6 +415,7 @@ const AdminLogin = () => {
           font-size: 0.88rem;
           transition: all 0.25s ease;
           caret-color: #00ff41;
+          box-sizing: border-box;
         }
 
         .hk-input::placeholder {
@@ -378,15 +434,17 @@ const AdminLogin = () => {
           right: 0.8rem;
           background: none;
           border: none;
-          color: #00ff4160;
+          color: rgba(0, 255, 65, 0.4);
           cursor: pointer;
           display: flex;
           align-items: center;
           padding: 0.2rem;
           transition: color 0.2s;
+          flex-shrink: 0;
         }
         .hk-eye-btn:hover { color: #00ff41; }
 
+        /* Submit */
         .hk-submit-btn {
           display: flex;
           align-items: center;
@@ -428,10 +486,9 @@ const AdminLogin = () => {
           animation: spin 0.7s linear infinite;
         }
 
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Footer */
         .hk-footer-line {
           display: flex;
           align-items: center;
@@ -452,11 +509,34 @@ const AdminLogin = () => {
           border-radius: 50%;
           background: #00ff41;
           animation: hkDotPulse 1.5s infinite;
+          flex-shrink: 0;
         }
 
         @keyframes hkDotPulse {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.3); }
+          50%       { opacity: 1;   transform: scale(1.3); }
+        }
+
+        .hk-back-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          width: 100%;
+          margin-top: 1rem;
+          padding: 0.5rem;
+          background: none;
+          border: none;
+          color: #2a5a2a;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+        .hk-back-btn:hover {
+          color: rgba(0, 255, 65, 0.6);
         }
 
         @media (max-width: 480px) {
@@ -464,9 +544,7 @@ const AdminLogin = () => {
             padding: 2rem 1.5rem;
             margin: 0 1rem;
           }
-          .hk-typed-title {
-            font-size: 1.2rem;
-          }
+          .hk-typed-title { font-size: 1.2rem; }
         }
       `}</style>
     </div>

@@ -53,7 +53,7 @@ const Contact = () => {
         <span className="section-label">Get In Touch</span>
         <h2 className="section-titlee">Let&apos;s Connect</h2>
         <p className="contact-sub">
-          I am actively looking for opportunities. Whether it's a job offer, internship, or just a chat — I would love to hear from you.
+          I am actively looking for opportunities. Whether it's a job offer or just a chat,  I would love to hear from you.
         </p>
 
         <div className="contact-grid">
@@ -107,7 +107,7 @@ const Contact = () => {
               <span className="cip-status-dot"></span>
               <div>
                 <p className="cip-status-title">Available for Opportunities</p>
-                <p className="cip-status-sub">Full-Time &nbsp;·&nbsp; Internship</p>
+                <p className="cip-status-sub">Full-Time</p>
               </div>
             </div>
           </div>
@@ -147,7 +147,7 @@ const Contact = () => {
                   type="text" id="subject" name="subject"
                   value={formData.subject} onChange={handleChange}
                   onFocus={() => setFocused('subject')} onBlur={() => setFocused('')}
-                  className="form-control" placeholder="Job Opportunity / Internship Offer" required
+                  className="form-control" placeholder="Job Opportunity" required
                 />
               </div>
 
@@ -189,7 +189,7 @@ const Contact = () => {
 
         .contact-sub {
           text-align: center;
-          max-width: 560px;
+          max-width: 575px;
           margin: -1.5rem auto 3rem;
           font-size: 1rem;
         }
