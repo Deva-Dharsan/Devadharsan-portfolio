@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { GraduationCap, Rocket, Heart, BookOpen, Briefcase, MapPin, Calendar } from 'lucide-react';
+import {
+  GraduationCap,
+  Rocket,
+  Heart,
+  BookOpen,
+  Briefcase,
+  MapPin,
+  Calendar,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react';
 
 const Experience = () => {
   const { API_URL } = useContext(AuthContext);
@@ -19,20 +29,28 @@ const Experience = () => {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const fetchExperiences = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_URL}/experiences`);
-        if (!res.ok) throw new Error('Failed to fetch experiences');
-        const data = await res.json();
+  const fetchExperiences = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`${API_URL}/experiences`);
+      if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
         setExperiences(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      } else {
+        throw new Error('Unexpected data format received from server');
       }
-    };
+    } catch (err) {
+      console.error('Failed to fetch experiences from backend:', err);
+      setError('Unable to load experience milestones from the database. The backend server may be offline or undergoing maintenance.');
+      setExperiences([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchExperiences();
   }, [API_URL]);
 
@@ -75,10 +93,35 @@ const Experience = () => {
         {loading ? (
           <div className="exp-loading">
             <div className="exp-spinner" />
-            <p>Loading experience...</p>
+            <p>Loading experience from database...</p>
           </div>
         ) : error ? (
-          <div className="exp-error-msg">Could not load experience data.</div>
+          <div className="exp-status-card glass-panel exp-status-card--error">
+            <div className="status-icon-wrapper status-icon-wrapper--error">
+              <AlertTriangle size={32} />
+            </div>
+            <div className="status-content">
+              <div className="status-badge status-badge--error">
+                <span className="status-dot red" />
+                <span>Service Unavailable</span>
+              </div>
+              <h3 className="status-title">Unable to Load Experience</h3>
+              <p className="status-description">
+                We are experiencing difficulty connecting to the database server.
+                The backend service may be offline or undergoing maintenance.
+              </p>
+              <div className="status-actions">
+                <button
+                  type="button"
+                  className="status-btn status-btn--retry"
+                  onClick={fetchExperiences}
+                >
+                  <RefreshCw size={14} />
+                  <span>Retry Connection</span>
+                </button>
+              </div>
+            </div>
+          </div>
         ) : experiences.length > 0 ? (
           <div className={`exp-timeline ${visible ? 'exp-timeline--visible' : ''}`}>
             {experiences.map((exp, idx) => (
@@ -211,12 +254,148 @@ const Experience = () => {
           border-radius: 50%;
           animation: spin 0.9s linear infinite;
         }
-        .exp-error-msg {
+        /* Professional Error State */
+        .exp-status-card {
+          max-width: 600px;
+          margin: 1rem auto 3rem;
+          padding: 2.75rem 2rem;
+          border-radius: var(--border-radius-lg, 16px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           text-align: center;
-          padding: 1.5rem;
-          color: var(--color-error);
-          font-family: var(--font-mono);
+          gap: 1.25rem;
+          position: relative;
+          background: rgba(15, 23, 42, 0.7);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+          animation: expStatusFadeIn 0.35s ease;
+        }
+
+        .exp-status-card--error {
+          border-color: rgba(239, 68, 68, 0.25);
+          box-shadow: 0 20px 40px -15px rgba(239, 68, 68, 0.12);
+        }
+
+        @keyframes expStatusFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .status-icon-wrapper {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(14, 165, 233, 0.1);
+          color: var(--color-primary, #0ea5e9);
+          border: 1px solid rgba(14, 165, 233, 0.25);
+        }
+
+        .status-icon-wrapper--error {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border-color: rgba(239, 68, 68, 0.3);
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+        }
+
+        .status-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.65rem;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          padding: 0.3rem 0.8rem;
+          border-radius: 50px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--text-secondary);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .status-badge--error {
+          background: rgba(239, 68, 68, 0.08);
+          color: #fca5a5;
+          border-color: rgba(239, 68, 68, 0.22);
+        }
+
+        .status-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+        }
+
+        .status-dot.red {
+          background: #ef4444;
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+        }
+
+        .status-title {
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-top: 0.2rem;
+          letter-spacing: -0.01em;
+        }
+
+        .status-description {
+          font-size: 0.92rem;
+          line-height: 1.6;
+          color: var(--text-secondary);
+          max-width: 480px;
+        }
+
+        .status-actions {
+          margin-top: 0.8rem;
+        }
+
+        .status-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.65rem 1.4rem;
+          border-radius: 50px;
           font-size: 0.85rem;
+          font-weight: 600;
+          background: rgba(255, 255, 255, 0.06);
+          color: var(--text-primary);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          cursor: pointer;
+          transition: all 0.25s ease;
+        }
+
+        .status-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+          transform: translateY(-1px);
+        }
+
+        .status-btn--retry {
+          background: rgba(239, 68, 68, 0.12);
+          border-color: rgba(239, 68, 68, 0.35);
+          color: #fca5a5;
+        }
+
+        .status-btn--retry:hover {
+          background: rgba(239, 68, 68, 0.22);
+          border-color: rgba(239, 68, 68, 0.5);
+          color: #fff;
+          box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
         }
 
         /* Timeline */

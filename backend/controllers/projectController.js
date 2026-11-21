@@ -32,18 +32,40 @@ export const getProjectById = async (req, res) => {
 // @route   POST /api/projects
 // @access  Private/Admin
 export const createProject = async (req, res) => {
-  const { title, description, detailedDescription, tags, imageUrl, githubLink, liveLink, order } = req.body;
+  const {
+    title,
+    category,
+    description,
+    detailedDescription,
+    tags,
+    imageUrl,
+    images,
+    codeTag,
+    githubLink,
+    liveLink,
+    order,
+  } = req.body;
 
   try {
+    const projectImages = Array.isArray(images)
+      ? images
+      : imageUrl
+      ? [imageUrl]
+      : [];
+    const primaryImage = imageUrl || (projectImages.length > 0 ? projectImages[0] : '');
+
     const project = new Project({
       title,
+      category: category || 'Full Stack Application',
       description,
       detailedDescription,
-      tags,
-      imageUrl,
-      githubLink,
-      liveLink,
-      order: order || 0,
+      tags: tags || [],
+      imageUrl: primaryImage,
+      images: projectImages,
+      codeTag: codeTag || '',
+      githubLink: githubLink || '',
+      liveLink: liveLink || '',
+      order: order !== undefined ? Number(order) : 0,
     });
 
     const createdProject = await project.save();
@@ -57,20 +79,51 @@ export const createProject = async (req, res) => {
 // @route   PUT /api/projects/:id
 // @access  Private/Admin
 export const updateProject = async (req, res) => {
-  const { title, description, detailedDescription, tags, imageUrl, githubLink, liveLink, order } = req.body;
+  const {
+    title,
+    category,
+    description,
+    detailedDescription,
+    tags,
+    imageUrl,
+    images,
+    codeTag,
+    githubLink,
+    liveLink,
+    order,
+  } = req.body;
 
   try {
     const project = await Project.findById(req.params.id);
 
     if (project) {
-      project.title = title || project.title;
-      project.description = description || project.description;
-      project.detailedDescription = detailedDescription !== undefined ? detailedDescription : project.detailedDescription;
-      project.tags = tags || project.tags;
-      project.imageUrl = imageUrl !== undefined ? imageUrl : project.imageUrl;
+      project.title = title !== undefined ? title : project.title;
+      project.category = category !== undefined ? category : project.category;
+      project.description = description !== undefined ? description : project.description;
+      project.detailedDescription =
+        detailedDescription !== undefined ? detailedDescription : project.detailedDescription;
+      project.tags = tags !== undefined ? tags : project.tags;
+
+      if (images !== undefined) {
+        project.images = Array.isArray(images) ? images : [];
+        if (imageUrl !== undefined && imageUrl) {
+          project.imageUrl = imageUrl;
+        } else if (project.images.length > 0) {
+          project.imageUrl = project.images[0];
+        } else {
+          project.imageUrl = '';
+        }
+      } else if (imageUrl !== undefined) {
+        project.imageUrl = imageUrl;
+        if (imageUrl && (!project.images || project.images.length === 0)) {
+          project.images = [imageUrl];
+        }
+      }
+
+      project.codeTag = codeTag !== undefined ? codeTag : project.codeTag;
       project.githubLink = githubLink !== undefined ? githubLink : project.githubLink;
       project.liveLink = liveLink !== undefined ? liveLink : project.liveLink;
-      project.order = order !== undefined ? order : project.order;
+      project.order = order !== undefined ? Number(order) : project.order;
 
       const updatedProject = await project.save();
       res.json(updatedProject);
@@ -90,8 +143,8 @@ export const deleteProject = async (req, res) => {
     const project = await Project.findById(req.params.id);
 
     if (project) {
-      await project.deleteOne();
-      res.json({ message: 'Project removed' });
+      await Project.deleteOne({ _id: req.params.id });
+      res.json({ message: 'Project removed successfully' });
     } else {
       res.status(404).json({ message: 'Project not found' });
     }

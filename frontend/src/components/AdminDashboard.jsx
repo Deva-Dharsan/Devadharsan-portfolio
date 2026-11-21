@@ -3,13 +3,14 @@ import {
   Layers, Briefcase, Mail, Trash2, Plus, Edit, Check, X,
   FileSpreadsheet, Eye, EyeOff, RefreshCw, Download, Search,
   ChevronDown, ChevronUp, Activity, Terminal, Shield, Clock,
-  Database, Zap, MessageSquare, BarChart3
+  Database, Zap, MessageSquare, BarChart3, Upload, Images, Image as ImageIcon,
+  LogOut, ExternalLink, ArrowLeft, ShieldCheck
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ setCurrentView }) => {
   const [activeTab, setActiveTab] = useState('projects');
-  const { token, API_URL } = useContext(AuthContext);
+  const { token, API_URL, logout, user } = useContext(AuthContext);
 
   // States for fetched items
   const [projects, setProjects] = useState([]);
@@ -40,14 +41,18 @@ const AdminDashboard = () => {
   // Project Form State
   const [projectForm, setProjectForm] = useState({
     title: '',
+    category: '',
     description: '',
     detailedDescription: '',
     tags: '',
     imageUrl: '',
+    images: [],
+    codeTag: '',
     githubLink: '',
     liveLink: '',
     order: 0,
   });
+  const [manualImageUrl, setManualImageUrl] = useState('');
 
   // Experience Form State
   const [experienceForm, setExperienceForm] = useState({
@@ -98,33 +103,81 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [projects.length, experiences.length, messages.length]);
 
-  // Matrix rain canvas
+  // Matrix rain canvas — English hacker words & code chars (matching AdminLogin)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const chars = 'アイウエオカキクケコ0123456789ABCDEF<>/{}[];';
-    const fontSize = 13;
+    // English hacker-style characters and words fragments
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;<>?/~`!';
+    const hackerWords = [
+      'ACCESS', 'DENIED', 'ROOT', 'SUDO', 'SSH', 'PING', 'PORT', 'NULL',
+      'HACK', 'EXEC', 'INIT', 'BOOT', 'SYS', 'AUTH', 'KEY', 'TOKEN',
+      'SHELL', 'BASH', 'NODE', 'API', 'SQL', 'XSS', 'CSRF', 'ADMIN',
+      'LOGIN', 'PASS', 'HASH', 'SALT', 'CRYPT', 'BYTE', 'HEX', 'BIT',
+      'NET', 'SCAN', 'PROXY', 'TRACE', 'ROUTE', 'HOST', 'DNS', 'IP',
+      '127.0.0.1', '0x', 'FF', '00', 'ERR', 'OK', '200', '403', '500',
+      'MONGODB', 'REACT', 'EXPRESS', 'ANGULAR', 'SECURITY', 'PAYLOAD',
+    ];
+
+    // Build a pool of single chars + word fragments
+    const pool = chars.split('').concat(
+      hackerWords.flatMap(w => w.split(''))
+    );
+
+    const fontSize = 14;
     const columns = Math.floor(canvas.width / fontSize);
     const drops = Array(columns).fill(1);
+    // Track whether column is in "word mode"
+    const wordQueues = Array(columns).fill(null).map(() => ({ chars: [], idx: 0 }));
+
+    // Randomly seed some columns with words
+    const seedWord = (col) => {
+      const word = hackerWords[Math.floor(Math.random() * hackerWords.length)] + ' ';
+      wordQueues[col] = { chars: word.split(''), idx: 0 };
+    };
+    columns && [...Array(Math.floor(columns * 0.18))].forEach(() => {
+      const col = Math.floor(Math.random() * columns);
+      seedWord(col);
+    });
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.06)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#00ff4115';
-      ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
 
       for (let i = 0; i < drops.length; i++) {
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        let char;
+        const wq = wordQueues[i];
+
+        if (wq && wq.idx < wq.chars.length) {
+          char = wq.chars[wq.idx];
+          wq.idx++;
+          if (wq.idx >= wq.chars.length) {
+            wordQueues[i] = { chars: [], idx: 0 };
+          }
+          // Bright green for word chars
+          ctx.fillStyle = '#00ff41';
+          ctx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
+        } else {
+          char = pool[Math.floor(Math.random() * pool.length)];
+          // Dim green for normal rain
+          ctx.fillStyle = 'rgba(0, 255, 65, 0.2)';
+          ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
+
+          // Randomly start a word stream
+          if (Math.random() > 0.994) seedWord(i);
+        }
+
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
@@ -132,7 +185,7 @@ const AdminDashboard = () => {
       }
     };
 
-    const interval = setInterval(draw, 55);
+    const interval = setInterval(draw, 50);
     return () => {
       clearInterval(interval);
       window.removeEventListener('resize', resize);
@@ -188,6 +241,82 @@ const AdminDashboard = () => {
   };
 
   // --- Project CRUD handlers ---
+  const handleMultipleImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          // Compress on client-side canvas to maintain fast uploads and lightweight payloads
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedData = canvas.toDataURL('image/jpeg', 0.85);
+
+          setProjectForm((prev) => {
+            const updatedImages = [...(prev.images || []), compressedData];
+            return {
+              ...prev,
+              images: updatedImages,
+              imageUrl: prev.imageUrl || updatedImages[0],
+            };
+          });
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleAddImageUrl = () => {
+    if (!manualImageUrl.trim()) return;
+    const url = manualImageUrl.trim();
+    setProjectForm((prev) => {
+      const updated = [...(prev.images || []), url];
+      return {
+        ...prev,
+        images: updated,
+        imageUrl: prev.imageUrl || updated[0],
+      };
+    });
+    setManualImageUrl('');
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setProjectForm((prev) => {
+      const updated = (prev.images || []).filter((_, idx) => idx !== indexToRemove);
+      return {
+        ...prev,
+        images: updated,
+        imageUrl: updated.includes(prev.imageUrl) ? prev.imageUrl : (updated[0] || ''),
+      };
+    });
+  };
+
+  const handleSetPrimaryImage = (imgSrc) => {
+    setProjectForm((prev) => ({
+      ...prev,
+      imageUrl: imgSrc,
+    }));
+  };
+
   const handleProjectSubmit = async (e) => {
     e.preventDefault();
     const endpoint = isEditing ? `${API_URL}/projects/${editingId}` : `${API_URL}/projects`;
@@ -197,6 +326,9 @@ const AdminDashboard = () => {
       ? projectForm.tags.split(',').map(t => t.trim()).filter(Boolean)
       : [];
 
+    const projectImages = Array.isArray(projectForm.images) ? projectForm.images : [];
+    const primaryImage = projectForm.imageUrl || (projectImages.length > 0 ? projectImages[0] : '');
+
     try {
       const response = await fetch(endpoint, {
         method,
@@ -204,7 +336,12 @@ const AdminDashboard = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...projectForm, tags: formattedTags }),
+        body: JSON.stringify({
+          ...projectForm,
+          imageUrl: primaryImage,
+          images: projectImages,
+          tags: formattedTags,
+        }),
       });
 
       const data = await response.json();
@@ -217,7 +354,7 @@ const AdminDashboard = () => {
         isEditing ? 'PROJECT_UPDATED: Changes saved.' : 'PROJECT_CREATED: Entry added.',
         null
       );
-      
+
       resetProjectForm();
       fetchDashboardData();
     } catch (err) {
@@ -228,16 +365,25 @@ const AdminDashboard = () => {
   const startEditProject = (project) => {
     setIsEditing(true);
     setEditingId(project._id);
+
+    const projectImages = Array.isArray(project.images) && project.images.length > 0
+      ? project.images
+      : (project.imageUrl ? [project.imageUrl] : []);
+
     setProjectForm({
-      title: project.title,
-      description: project.description,
+      title: project.title || '',
+      category: project.category || '',
+      description: project.description || '',
       detailedDescription: project.detailedDescription || '',
       tags: project.tags ? project.tags.join(', ') : '',
-      imageUrl: project.imageUrl || '',
+      imageUrl: project.imageUrl || (projectImages[0] || ''),
+      images: projectImages,
+      codeTag: project.codeTag || '',
       githubLink: project.githubLink || '',
       liveLink: project.liveLink || '',
-      order: project.order || 0,
+      order: project.order !== undefined ? project.order : 0,
     });
+    setManualImageUrl('');
   };
 
   const deleteProject = async (id) => {
@@ -260,14 +406,18 @@ const AdminDashboard = () => {
   const resetProjectForm = () => {
     setProjectForm({
       title: '',
+      category: '',
       description: '',
       detailedDescription: '',
       tags: '',
       imageUrl: '',
+      images: [],
+      codeTag: '',
       githubLink: '',
       liveLink: '',
       order: 0,
     });
+    setManualImageUrl('');
     setIsEditing(false);
     setEditingId(null);
   };
@@ -302,7 +452,7 @@ const AdminDashboard = () => {
         isEditing ? 'MILESTONE_UPDATED: Changes saved.' : 'MILESTONE_CREATED: Entry added.',
         null
       );
-      
+
       resetExperienceForm();
       fetchDashboardData();
     } catch (err) {
@@ -423,64 +573,97 @@ const AdminDashboard = () => {
       <div className="hk-scanlines" />
 
       <div className="hk-dash-container">
-        {/* Header */}
+        {/* Cyberpunk Top Bar Header */}
         <div className="hk-dash-header">
           <div className="hk-header-left">
-            <Terminal size={20} className="hk-header-icon" />
-            <h1 className="hk-glitch" data-text="CONTROL_PANEL">CONTROL_PANEL</h1>
+            <div className="hk-header-icon-box">
+              <Terminal size={22} className="hk-header-icon" />
+            </div>
+            <div className="hk-title-stack">
+              <h1 className="hk-glitch" data-text="CONTROL_PANEL">CONTROL_PANEL</h1>
+            </div>
           </div>
+
           <div className="hk-header-right">
+            {/* Authenticated Admin Badge */}
+            <div className="hk-user-badge">
+              <ShieldCheck size={14} className="hk-user-shield" />
+              <span className="hk-user-email">{user?.email || 'admin@root'}</span>
+            </div>
+
+            {/* Live Terminal Clock */}
             <div className="hk-clock">
               <Clock size={13} />
               <span>{clock.toLocaleTimeString('en-US', { hour12: false })}</span>
             </div>
-            <div className="hk-status-dot" />
-            <span className="hk-status-text">ONLINE</span>
+
+            {/* Online Status Beacon */}
+            <div className="hk-status-badge">
+              <div className="hk-status-dot" />
+              <span className="hk-status-text">ONLINE</span>
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats HUD Row */}
         <div className="hk-stats-row">
-          <div className="hk-stat-card">
-            <div className="hk-stat-icon hk-stat-icon--blue"><Database size={18} /></div>
+          <div className="hk-stat-card hk-stat-card--blue">
+            <div className="hk-stat-corner tl" />
+            <div className="hk-stat-corner br" />
+            <div className="hk-stat-icon hk-stat-icon--blue"><Database size={20} /></div>
             <div className="hk-stat-info">
+              <div className="hk-stat-sub">// ACTIVE_DATASETS</div>
               <span className="hk-stat-num">{animatedStats.projects}</span>
-              <span className="hk-stat-label">Projects</span>
+              <span className="hk-stat-label">Projects Published</span>
             </div>
           </div>
-          <div className="hk-stat-card">
-            <div className="hk-stat-icon hk-stat-icon--purple"><Briefcase size={18} /></div>
+          <div className="hk-stat-card hk-stat-card--purple">
+            <div className="hk-stat-corner tl" />
+            <div className="hk-stat-corner br" />
+            <div className="hk-stat-icon hk-stat-icon--purple"><Briefcase size={20} /></div>
             <div className="hk-stat-info">
+              <div className="hk-stat-sub">// WORK_HISTORY</div>
               <span className="hk-stat-num">{animatedStats.experiences}</span>
-              <span className="hk-stat-label">Experience</span>
+              <span className="hk-stat-label">Milestones Logged</span>
             </div>
           </div>
-          <div className="hk-stat-card">
-            <div className="hk-stat-icon hk-stat-icon--yellow"><Zap size={18} /></div>
+          <div className="hk-stat-card hk-stat-card--yellow">
+            <div className="hk-stat-corner tl" />
+            <div className="hk-stat-corner br" />
+            <div className="hk-stat-icon hk-stat-icon--yellow"><Zap size={20} /></div>
             <div className="hk-stat-info">
+              <div className="hk-stat-sub">// INCOMING_ALERTS</div>
               <span className="hk-stat-num">{animatedStats.unread}</span>
-              <span className="hk-stat-label">Unread</span>
+              <span className="hk-stat-label">Unread Messages</span>
             </div>
           </div>
-          <div className="hk-stat-card">
-            <div className="hk-stat-icon hk-stat-icon--green"><MessageSquare size={18} /></div>
+          <div className="hk-stat-card hk-stat-card--green">
+            <div className="hk-stat-corner tl" />
+            <div className="hk-stat-corner br" />
+            <div className="hk-stat-icon hk-stat-icon--green"><MessageSquare size={20} /></div>
             <div className="hk-stat-info">
+              <div className="hk-stat-sub">// TRANSMISSIONS</div>
               <span className="hk-stat-num">{animatedStats.total}</span>
-              <span className="hk-stat-label">Total Msgs</span>
+              <span className="hk-stat-label">Total Inquiries</span>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="hk-quick-actions">
-          <button className="hk-action-btn" onClick={fetchDashboardData}>
-            <RefreshCw size={14} />
-            <span>REFRESH</span>
-          </button>
-          <button className="hk-action-btn" onClick={handleExport}>
-            <Download size={14} />
-            <span>EXPORT_JSON</span>
-          </button>
+        {/* Quick Actions & System Info Bar */}
+        <div className="hk-quick-actions-bar">
+          <div className="hk-quick-actions">
+            <button className="hk-action-btn" onClick={fetchDashboardData} title="Sync with live database">
+              <RefreshCw size={14} className={loading ? 'hk-spin' : ''} />
+              <span>SYNC_DATA</span>
+            </button>
+            <button className="hk-action-btn" onClick={handleExport} title="Download JSON data snapshot">
+              <Download size={14} />
+              <span>EXPORT_SNAPSHOT</span>
+            </button>
+          </div>
+          <div className="hk-sys-indicator">
+            <span className="hk-sys-text">PROTOCOL: REST_API / MONGODB_ATLAS</span>
+          </div>
         </div>
 
         {/* Status alerts */}
@@ -537,16 +720,40 @@ const AdminDashboard = () => {
                         required
                         value={projectForm.title}
                         onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
-                        placeholder="E-Commerce App"
+                        placeholder="Personal Developer Portfolio"
                       />
                     </div>
                     <div className="hk-field">
-                      <label className="hk-label">order_index</label>
+                      <label className="hk-label">category / stack_badge</label>
                       <input
-                        type="number"
+                        type="text"
                         className="hk-input"
-                        value={projectForm.order}
-                        onChange={(e) => setProjectForm({ ...projectForm, order: Number(e.target.value) })}
+                        value={projectForm.category}
+                        onChange={(e) => setProjectForm({ ...projectForm, category: e.target.value })}
+                        placeholder="Full Stack · MERN Stack"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="hk-form-row">
+                    <div className="hk-field">
+                      <label className="hk-label">tags // comma_separated</label>
+                      <input
+                        type="text"
+                        className="hk-input"
+                        value={projectForm.tags}
+                        onChange={(e) => setProjectForm({ ...projectForm, tags: e.target.value })}
+                        placeholder="React.js, Node.js, Express.js, MongoDB"
+                      />
+                    </div>
+                    <div className="hk-field">
+                      <label className="hk-label">mockup_filename // optional</label>
+                      <input
+                        type="text"
+                        className="hk-input"
+                        value={projectForm.codeTag}
+                        onChange={(e) => setProjectForm({ ...projectForm, codeTag: e.target.value })}
+                        placeholder="Portfolio.jsx"
                       />
                     </div>
                   </div>
@@ -569,35 +776,91 @@ const AdminDashboard = () => {
                       className="hk-input hk-textarea"
                       value={projectForm.detailedDescription}
                       onChange={(e) => setProjectForm({ ...projectForm, detailedDescription: e.target.value })}
-                      placeholder="Comprehensive explanation of tech choice, features..."
+                      placeholder="Comprehensive explanation of tech choice, features, architecture..."
+                      rows={5}
                     />
                   </div>
 
+                  {/* Multi-Image Manager */}
                   <div className="hk-field">
-                    <label className="hk-label">tags // comma_separated</label>
-                    <input
-                      type="text"
-                      className="hk-input"
-                      value={projectForm.tags}
-                      onChange={(e) => setProjectForm({ ...projectForm, tags: e.target.value })}
-                      placeholder="React, Node.js, Express, MongoDB"
-                    />
-                  </div>
+                    <label className="hk-label">project_images // upload_or_url</label>
 
-                  <div className="hk-field">
-                    <label className="hk-label">image_url</label>
-                    <input
-                      type="text"
-                      className="hk-input"
-                      value={projectForm.imageUrl}
-                      onChange={(e) => setProjectForm({ ...projectForm, imageUrl: e.target.value })}
-                      placeholder="https://example.com/project.png"
-                    />
+                    <div className="hk-image-controls">
+                      <label className="hk-file-upload-btn">
+                        <Upload size={14} />
+                        <span>Upload Images from Device</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleMultipleImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+
+                      <div className="hk-url-input-wrap">
+                        <input
+                          type="text"
+                          className="hk-input"
+                          placeholder="or paste image URL (https://...)"
+                          value={manualImageUrl}
+                          onChange={(e) => setManualImageUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddImageUrl();
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="hk-btn-add-url"
+                          onClick={handleAddImageUrl}
+                        >
+                          <Plus size={14} /> Add URL
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Previews Grid */}
+                    {projectForm.images && projectForm.images.length > 0 && (
+                      <div className="hk-image-preview-grid">
+                        {projectForm.images.map((imgSrc, idx) => {
+                          const isPrimary = projectForm.imageUrl === imgSrc || (idx === 0 && !projectForm.imageUrl);
+                          return (
+                            <div key={idx} className={`hk-image-preview-card ${isPrimary ? 'is-primary' : ''}`}>
+                              <img src={imgSrc} alt={`Preview ${idx + 1}`} className="hk-preview-img" />
+                              <div className="hk-preview-overlay">
+                                {isPrimary ? (
+                                  <span className="hk-primary-badge">PRIMARY</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="hk-btn-set-primary"
+                                    onClick={() => handleSetPrimaryImage(imgSrc)}
+                                  >
+                                    Set Primary
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  className="hk-btn-remove-img"
+                                  onClick={() => handleRemoveImage(idx)}
+                                  title="Remove Image"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div className="hk-form-row">
                     <div className="hk-field">
-                      <label className="hk-label">github_url</label>
+                      <label className="hk-label">github_url // optional</label>
                       <input
                         type="url"
                         className="hk-input"
@@ -607,13 +870,22 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="hk-field">
-                      <label className="hk-label">live_url</label>
+                      <label className="hk-label">live_url // optional</label>
                       <input
                         type="url"
                         className="hk-input"
                         value={projectForm.liveLink}
                         onChange={(e) => setProjectForm({ ...projectForm, liveLink: e.target.value })}
                         placeholder="https://mysite.com"
+                      />
+                    </div>
+                    <div className="hk-field" style={{ maxWidth: 120 }}>
+                      <label className="hk-label">order_idx</label>
+                      <input
+                        type="number"
+                        className="hk-input"
+                        value={projectForm.order}
+                        onChange={(e) => setProjectForm({ ...projectForm, order: Number(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -633,22 +905,32 @@ const AdminDashboard = () => {
 
               <h2 className="hk-pane-title" style={{ marginTop: '2.5rem' }}>&gt; existing_projects</h2>
               <div className="hk-item-list">
-                {projects.map((proj, idx) => (
-                  <div key={proj._id} className="hk-item-row" style={{ animationDelay: `${idx * 0.05}s` }}>
-                    <div className="hk-item-meta">
-                      <h4>{proj.title} <span className="hk-badge">idx:{proj.order}</span></h4>
-                      <p>{proj.description}</p>
+                {projects.map((proj, idx) => {
+                  const thumb = proj.imageUrl || (proj.images && proj.images[0]);
+                  return (
+                    <div key={proj._id} className="hk-item-row" style={{ animationDelay: `${idx * 0.05}s` }}>
+                      {thumb && <img src={thumb} alt="" className="hk-thumb-mini" />}
+                      <div className="hk-item-meta">
+                        <h4>
+                          {proj.title}
+                          {proj.category && <span className="hk-badge">{proj.category}</span>}
+                          {proj.images?.length > 1 && (
+                            <span className="hk-badge">+{proj.images.length} imgs</span>
+                          )}
+                        </h4>
+                        <p>{proj.description}</p>
+                      </div>
+                      <div className="hk-item-actions">
+                        <button onClick={() => startEditProject(proj)} className="hk-icon-btn hk-icon-btn--edit" title="Edit Project">
+                          <Edit size={15} />
+                        </button>
+                        <button onClick={() => deleteProject(proj._id)} className="hk-icon-btn hk-icon-btn--delete" title="Delete Project">
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="hk-item-actions">
-                      <button onClick={() => startEditProject(proj)} className="hk-icon-btn hk-icon-btn--edit">
-                        <Edit size={15} />
-                      </button>
-                      <button onClick={() => deleteProject(proj._id)} className="hk-icon-btn hk-icon-btn--delete">
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {projects.length === 0 && (
                   <div className="hk-empty">
                     <Layers size={32} />
@@ -934,37 +1216,79 @@ const AdminDashboard = () => {
         }
 
         /* ==========================================
-           HEADER
+           CYBERPUNK HEADER
            ========================================== */
         .hk-dash-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 1.5rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+          padding: 1.1rem 1.4rem;
+          background: rgba(8, 14, 8, 0.75);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(0, 255, 65, 0.18);
+          border-radius: 8px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(0, 255, 65, 0.15);
         }
 
         .hk-header-left {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+        }
+
+        .hk-header-icon-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 8px;
+          background: rgba(0, 255, 65, 0.08);
+          border: 1px solid rgba(0, 255, 65, 0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #00ff41;
+          box-shadow: 0 0 14px rgba(0, 255, 65, 0.25);
+          flex-shrink: 0;
         }
 
         .hk-header-icon {
           color: #00ff41;
-          filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.4));
+          filter: drop-shadow(0 0 6px rgba(0, 255, 65, 0.6));
+        }
+
+        .hk-title-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .hk-system-tag {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.65rem;
+          color: #00ff41;
+          letter-spacing: 0.12em;
+          opacity: 0.85;
+          text-transform: uppercase;
+          font-weight: 600;
+        }
+
+        .hk-bracket {
+          color: #00d4ff;
+          font-weight: 700;
         }
 
         /* Glitch effect */
         .hk-glitch {
           font-family: 'Share Tech Mono', monospace;
-          font-size: 1.4rem;
+          font-size: 1.5rem;
           font-weight: 400;
           color: #00ff41;
-          text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+          text-shadow: 0 0 12px rgba(0, 255, 65, 0.4);
           position: relative;
           letter-spacing: 0.06em;
+          margin: 0;
+          line-height: 1.1;
         }
 
         .hk-glitch::before,
@@ -1007,11 +1331,44 @@ const AdminDashboard = () => {
         .hk-header-right {
           display: flex;
           align-items: center;
-          gap: 0.6rem;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        /* User badge */
+        .hk-user-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.35rem 0.7rem;
+          background: rgba(0, 212, 255, 0.06);
+          border: 1px solid rgba(0, 212, 255, 0.25);
+          border-radius: 4px;
+          color: #00d4ff;
           font-size: 0.72rem;
-          color: #3a6a3a;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.04em;
+        }
+
+        .hk-user-shield {
+          color: #00d4ff;
+        }
+
+        .hk-user-email {
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hk-role-tag {
+          background: #00ff41;
+          color: #050d05;
+          font-weight: 700;
+          font-size: 0.58rem;
+          padding: 1px 5px;
+          border-radius: 2px;
+          letter-spacing: 0.06em;
         }
 
         .hk-clock {
@@ -1019,12 +1376,22 @@ const AdminDashboard = () => {
           align-items: center;
           gap: 0.4rem;
           color: #00ff41;
-          padding: 0.3rem 0.6rem;
+          padding: 0.35rem 0.65rem;
           background: rgba(0, 255, 65, 0.05);
-          border: 1px solid rgba(0, 255, 65, 0.12);
+          border: 1px solid rgba(0, 255, 65, 0.18);
           border-radius: 4px;
           font-size: 0.75rem;
           font-variant-numeric: tabular-nums;
+        }
+
+        .hk-status-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          padding: 0.35rem 0.65rem;
+          background: rgba(0, 255, 65, 0.04);
+          border: 1px solid rgba(0, 255, 65, 0.15);
+          border-radius: 4px;
         }
 
         .hk-status-dot {
@@ -1042,10 +1409,59 @@ const AdminDashboard = () => {
 
         .hk-status-text {
           color: #00ff41;
+          font-size: 0.7rem;
+          letter-spacing: 0.08em;
+          font-weight: 600;
+        }
+
+        .hk-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+        }
+
+        .hk-head-action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.42rem 0.8rem;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.7rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          text-transform: uppercase;
+          border: 1px solid transparent;
+        }
+
+        .hk-head-action-btn--portfolio {
+          background: rgba(0, 255, 65, 0.08);
+          border-color: rgba(0, 255, 65, 0.3);
+          color: #00ff41;
+        }
+
+        .hk-head-action-btn--portfolio:hover {
+          background: rgba(0, 255, 65, 0.2);
+          box-shadow: 0 0 14px rgba(0, 255, 65, 0.25);
+          transform: translateY(-1px);
+        }
+
+        .hk-head-action-btn--logout {
+          background: rgba(255, 68, 68, 0.08);
+          border-color: rgba(255, 68, 68, 0.3);
+          color: #ff5555;
+        }
+
+        .hk-head-action-btn--logout:hover {
+          background: rgba(255, 68, 68, 0.22);
+          box-shadow: 0 0 14px rgba(255, 68, 68, 0.25);
+          transform: translateY(-1px);
         }
 
         /* ==========================================
-           STATS ROW
+           STATS HUD ROW
            ========================================== */
         .hk-stats-row {
           display: grid;
@@ -1055,16 +1471,70 @@ const AdminDashboard = () => {
         }
 
         .hk-stat-card {
+          position: relative;
           display: flex;
           align-items: center;
-          gap: 0.85rem;
-          padding: 1.1rem 1.2rem;
-          background: rgba(10, 10, 10, 0.85);
-          border: 1px solid rgba(0, 255, 65, 0.1);
+          gap: 0.95rem;
+          padding: 1.15rem 1.25rem;
+          background: rgba(10, 16, 10, 0.85);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(0, 255, 65, 0.12);
           border-radius: 6px;
           transition: all 0.3s ease;
           animation: hkFadeUp 0.5s ease forwards;
           opacity: 0;
+          overflow: hidden;
+        }
+
+        .hk-stat-corner {
+          position: absolute;
+          width: 7px;
+          height: 7px;
+          border: 1.5px solid transparent;
+          pointer-events: none;
+        }
+
+        .hk-stat-corner.tl {
+          top: 0;
+          left: 0;
+          border-right: none;
+          border-bottom: none;
+        }
+
+        .hk-stat-corner.br {
+          bottom: 0;
+          right: 0;
+          border-left: none;
+          border-top: none;
+        }
+
+        .hk-stat-card--blue {
+          border-top: 2px solid #00d4ff;
+        }
+        .hk-stat-card--blue .hk-stat-corner {
+          border-color: #00d4ff;
+        }
+
+        .hk-stat-card--purple {
+          border-top: 2px solid #a855f7;
+        }
+        .hk-stat-card--purple .hk-stat-corner {
+          border-color: #a855f7;
+        }
+
+        .hk-stat-card--yellow {
+          border-top: 2px solid #ffc800;
+        }
+        .hk-stat-card--yellow .hk-stat-corner {
+          border-color: #ffc800;
+        }
+
+        .hk-stat-card--green {
+          border-top: 2px solid #00ff41;
+        }
+        .hk-stat-card--green .hk-stat-corner {
+          border-color: #00ff41;
         }
 
         .hk-stat-card:nth-child(1) { animation-delay: 0s; }
@@ -1073,14 +1543,14 @@ const AdminDashboard = () => {
         .hk-stat-card:nth-child(4) { animation-delay: 0.24s; }
 
         .hk-stat-card:hover {
-          border-color: rgba(0, 255, 65, 0.3);
-          box-shadow: 0 0 20px rgba(0, 255, 65, 0.06);
+          border-color: rgba(0, 255, 65, 0.35);
+          box-shadow: 0 6px 24px rgba(0, 255, 65, 0.08);
           transform: translateY(-2px);
         }
 
         .hk-stat-icon {
-          width: 40px;
-          height: 40px;
+          width: 44px;
+          height: 44px;
           border-radius: 8px;
           display: flex;
           align-items: center;
@@ -1088,30 +1558,40 @@ const AdminDashboard = () => {
           flex-shrink: 0;
         }
 
-        .hk-stat-icon--green { background: rgba(0, 255, 65, 0.1); color: #00ff41; }
-        .hk-stat-icon--blue { background: rgba(0, 212, 255, 0.1); color: #00d4ff; }
-        .hk-stat-icon--purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
-        .hk-stat-icon--yellow { background: rgba(255, 200, 0, 0.1); color: #ffc800; }
+        .hk-stat-icon--green { background: rgba(0, 255, 65, 0.12); color: #00ff41; border: 1px solid rgba(0, 255, 65, 0.25); }
+        .hk-stat-icon--blue { background: rgba(0, 212, 255, 0.12); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.25); }
+        .hk-stat-icon--purple { background: rgba(168, 85, 247, 0.12); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.25); }
+        .hk-stat-icon--yellow { background: rgba(255, 200, 0, 0.12); color: #ffc800; border: 1px solid rgba(255, 200, 0, 0.25); }
 
         .hk-stat-info {
           display: flex;
           flex-direction: column;
         }
 
+        .hk-stat-sub {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.62rem;
+          color: #00ff41;
+          letter-spacing: 0.08em;
+          opacity: 0.7;
+          margin-bottom: 0.2rem;
+        }
+
         .hk-stat-num {
-          font-size: 1.5rem;
+          font-size: 1.65rem;
           font-weight: 700;
-          color: #e0e0e0;
+          color: #f0f0f0;
           line-height: 1;
           font-variant-numeric: tabular-nums;
+          text-shadow: 0 0 10px rgba(0, 255, 65, 0.15);
         }
 
         .hk-stat-label {
           font-size: 0.68rem;
-          color: #4a6a4a;
+          color: #6a9a6a;
           text-transform: uppercase;
           letter-spacing: 0.08em;
-          margin-top: 0.2rem;
+          margin-top: 0.3rem;
         }
 
         @keyframes hkFadeUp {
@@ -1126,36 +1606,65 @@ const AdminDashboard = () => {
         }
 
         /* ==========================================
-           QUICK ACTIONS
+           QUICK ACTIONS & SYSTEM BAR
            ========================================== */
+        .hk-quick-actions-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1.6rem;
+          flex-wrap: wrap;
+        }
+
         .hk-quick-actions {
           display: flex;
           gap: 0.75rem;
-          margin-bottom: 1.5rem;
         }
 
         .hk-action-btn {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: rgba(0, 255, 65, 0.04);
-          border: 1px solid rgba(0, 255, 65, 0.15);
+          padding: 0.55rem 1.1rem;
+          background: rgba(0, 255, 65, 0.05);
+          border: 1px solid rgba(0, 255, 65, 0.2);
           border-radius: 4px;
           color: #00ff41;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 0.72rem;
-          font-weight: 500;
-          letter-spacing: 0.06em;
+          font-size: 0.73rem;
+          font-weight: 600;
+          letter-spacing: 0.07em;
           cursor: pointer;
           transition: all 0.25s ease;
           text-transform: uppercase;
         }
 
         .hk-action-btn:hover {
-          background: rgba(0, 255, 65, 0.1);
-          box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+          background: rgba(0, 255, 65, 0.14);
+          border-color: rgba(0, 255, 65, 0.4);
+          box-shadow: 0 0 16px rgba(0, 255, 65, 0.15);
           transform: translateY(-1px);
+        }
+
+        .hk-spin {
+          animation: hkSpin 1s linear infinite;
+        }
+
+        .hk-sys-indicator {
+          display: flex;
+          align-items: center;
+          padding: 0.45rem 0.85rem;
+          background: rgba(0, 255, 65, 0.03);
+          border: 1px solid rgba(0, 255, 65, 0.1);
+          border-radius: 4px;
+        }
+
+        .hk-sys-text {
+          font-size: 0.68rem;
+          color: #3f6e3f;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
 
         /* ==========================================
@@ -1164,24 +1673,27 @@ const AdminDashboard = () => {
         .hk-alert {
           display: flex;
           align-items: center;
-          gap: 0.6rem;
-          padding: 0.7rem 1rem;
+          gap: 0.65rem;
+          padding: 0.8rem 1.1rem;
           border-radius: 4px;
-          font-size: 0.78rem;
-          margin-bottom: 1rem;
+          font-size: 0.8rem;
+          margin-bottom: 1.2rem;
           animation: hkSlideIn 0.35s ease;
+          font-family: 'JetBrains Mono', monospace;
         }
 
         .hk-alert--success {
-          background: rgba(0, 255, 65, 0.06);
-          border: 1px solid rgba(0, 255, 65, 0.2);
+          background: rgba(0, 255, 65, 0.08);
+          border: 1px solid rgba(0, 255, 65, 0.3);
           color: #00ff41;
+          box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
         }
 
         .hk-alert--error {
-          background: rgba(255, 50, 50, 0.06);
-          border: 1px solid rgba(255, 50, 50, 0.2);
-          color: #ff4444;
+          background: rgba(255, 50, 50, 0.08);
+          border: 1px solid rgba(255, 50, 50, 0.3);
+          color: #ff5555;
+          box-shadow: 0 0 15px rgba(255, 50, 50, 0.1);
         }
 
         @keyframes hkSlideIn {
@@ -1321,6 +1833,168 @@ const AdminDashboard = () => {
           resize: vertical;
           min-height: 100px;
           line-height: 1.5;
+        }
+
+        /* Image Manager in Admin */
+        .hk-image-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-top: 0.4rem;
+        }
+
+        .hk-file-upload-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.65rem 1.25rem;
+          background: rgba(0, 255, 65, 0.08);
+          border: 1px dashed rgba(0, 255, 65, 0.4);
+          border-radius: 4px;
+          color: #00ff41;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .hk-file-upload-btn:hover {
+          background: rgba(0, 255, 65, 0.16);
+          border-color: #00ff41;
+          box-shadow: 0 0 12px rgba(0, 255, 65, 0.2);
+        }
+
+        .hk-url-input-wrap {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .hk-btn-add-url {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.55rem 0.95rem;
+          background: rgba(0, 255, 65, 0.1);
+          border: 1px solid rgba(0, 255, 65, 0.25);
+          border-radius: 4px;
+          color: #00ff41;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.76rem;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+
+        .hk-btn-add-url:hover {
+          background: rgba(0, 255, 65, 0.2);
+        }
+
+        .hk-image-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          gap: 0.75rem;
+          margin-top: 0.75rem;
+          padding: 0.75rem;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(0, 255, 65, 0.1);
+          border-radius: 4px;
+        }
+
+        .hk-image-preview-card {
+          position: relative;
+          width: 100%;
+          height: 80px;
+          border-radius: 4px;
+          overflow: hidden;
+          border: 1.5px solid rgba(255, 255, 255, 0.1);
+          background: #000;
+        }
+
+        .hk-image-preview-card.is-primary {
+          border-color: #00ff41;
+          box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        .hk-preview-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .hk-preview-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.75);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: flex-end;
+          padding: 4px;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .hk-image-preview-card:hover .hk-preview-overlay {
+          opacity: 1;
+        }
+
+        .hk-primary-badge {
+          align-self: flex-start;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.6rem;
+          background: #00ff41;
+          color: #000;
+          font-weight: 700;
+          padding: 1px 4px;
+          border-radius: 2px;
+        }
+
+        .hk-btn-set-primary {
+          align-self: flex-start;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.6rem;
+          background: rgba(0, 255, 65, 0.2);
+          color: #00ff41;
+          border: 1px solid rgba(0, 255, 65, 0.4);
+          padding: 1px 5px;
+          border-radius: 2px;
+          cursor: pointer;
+        }
+
+        .hk-btn-set-primary:hover {
+          background: #00ff41;
+          color: #000;
+        }
+
+        .hk-btn-remove-img {
+          background: rgba(255, 68, 68, 0.2);
+          border: 1px solid rgba(255, 68, 68, 0.5);
+          color: #ff4444;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .hk-btn-remove-img:hover {
+          background: #ff4444;
+          color: #fff;
+        }
+
+        .hk-thumb-mini {
+          width: 44px;
+          height: 34px;
+          border-radius: 3px;
+          object-fit: cover;
+          border: 1px solid rgba(0, 255, 65, 0.2);
+          margin-right: 0.75rem;
+          flex-shrink: 0;
         }
 
         .hk-form-actions {
@@ -1693,8 +2367,13 @@ const AdminDashboard = () => {
 
           .hk-dash-header {
             flex-direction: column;
-            gap: 0.8rem;
+            gap: 1rem;
             align-items: flex-start;
+          }
+
+          .hk-header-right {
+            width: 100%;
+            justify-content: space-between;
           }
 
           .hk-tabs {
@@ -1711,16 +2390,16 @@ const AdminDashboard = () => {
 
         @media (max-width: 576px) {
           .hk-stats-row {
-            grid-template-columns: 1fr 1fr;
-            gap: 0.6rem;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
           }
 
           .hk-stat-card {
-            padding: 0.85rem;
+            padding: 0.95rem;
           }
 
           .hk-stat-num {
-            font-size: 1.2rem;
+            font-size: 1.35rem;
           }
 
           .hk-form-row {
@@ -1729,11 +2408,40 @@ const AdminDashboard = () => {
           }
 
           .hk-glitch {
-            font-size: 1rem;
+            font-size: 1.15rem;
+          }
+
+          .hk-header-right {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.6rem;
+          }
+
+          .hk-header-actions {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+          }
+
+          .hk-head-action-btn {
+            flex: 1;
+            justify-content: center;
+          }
+
+          .hk-quick-actions-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
           }
 
           .hk-quick-actions {
             flex-wrap: wrap;
+            width: 100%;
+          }
+
+          .hk-action-btn {
+            flex: 1;
+            justify-content: center;
           }
 
           .hk-item-row {

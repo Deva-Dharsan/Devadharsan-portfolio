@@ -7,6 +7,11 @@ const projectSchema = new mongoose.Schema(
       required: [true, 'Project title is required'],
       trim: true,
     },
+    category: {
+      type: String,
+      trim: true,
+      default: 'Full Stack Application',
+    },
     description: {
       type: String,
       required: [true, 'Short description is required'],
@@ -24,6 +29,16 @@ const projectSchema = new mongoose.Schema(
     ],
     imageUrl: {
       type: String,
+      default: '',
+    },
+    images: [
+      {
+        type: String,
+      },
+    ],
+    codeTag: {
+      type: String,
+      trim: true,
       default: '',
     },
     githubLink: {

@@ -288,6 +288,7 @@ const Contact = () => {
 
         /* Form Panel */
         .contact-form-panel {
+          height: 625px;
           padding: 2.5rem;
           display: flex;
           flex-direction: column;
