@@ -102,7 +102,7 @@ const Hero = ({ setActiveSection }) => {
 
           {/* Headline Stack */}
           <div className="hero-headline-group">
-            <span className="hero-greeting">// Hello World, I&apos;m</span>
+            {/* <span className="hero-greeting">// Hello World, I&apos;m</span> */}
             <h1 className="hero-name">
               Devadharsan <span className="gradient-text hero-initials">J E</span>
             </h1>
@@ -115,7 +115,7 @@ const Hero = ({ setActiveSection }) => {
               {/* <span className="role-terminal-prompt">engineer:~$</span> */}
             </div>
             <div className="role-terminal-body">
-              <span className="role-prefix">I am a </span>
+              <span className="role-prefix">I'm a </span>
               <span className="typewriter-text">{text}</span>
               <span className="typewriter-cursor">_</span>
             </div>
