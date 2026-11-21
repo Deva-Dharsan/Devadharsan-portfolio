@@ -67,7 +67,7 @@ const Experience = () => {
     <section id="experience" className="experience-section" ref={sectionRef}>
       <div className="container">
         <div className="section-header">
-          <span className="section-label">My Journey</span>
+          {/* <span className="section-label">My Journey</span> */}
           <h2 className="section-title">Experience</h2>
         </div>
 
